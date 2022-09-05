@@ -29,15 +29,25 @@ namespace ConsoleUI
         private static void ProductTest()
         {
             ProductManager productManager = new ProductManager(new EfProductDal());
-            foreach (var item in productManager.GetAllByCategoryId(2))
+            var result = productManager.GetProductDetails();
+
+            if (result.IsSuccess)
             {
-                Console.WriteLine(item.ProductName);
+                foreach (var productManagerDto in result.Data)
+                {
+                    Console.WriteLine(productManagerDto.ProductName + " / " + productManagerDto.CategoryName);
+                }
+            }
+            else
+            {
+                Console.WriteLine(result.Message);
             }
 
-            foreach (var productManagerDto in productManager.GetProductDetails())
-            {
-                Console.WriteLine(productManagerDto.ProductName + " / " + productManagerDto.CategoryName);
-            }
+
+            //foreach (var item in productManager.GetAllByCategoryId(2).Data)
+            //{
+            //    Console.WriteLine(item.ProductName);
+            //}
         }
     }
 }
