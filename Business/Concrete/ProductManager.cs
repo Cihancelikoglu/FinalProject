@@ -4,11 +4,17 @@ using DataAccess.Abstract;
 using Entities.Concrete;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using Entities.DTOs;
 using Core.Utilities.Results;
 using Core;
 using Business.Constants;
+using Business.ValidationRules.FluentValidation;
+using Core.Aspects.Autofac.Validation;
+using Core.CrossCuttingConcerns.Validation;
+using FluentValidation;
+using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace Business.Concrete
 {
@@ -21,13 +27,13 @@ namespace Business.Concrete
             _productDal = productDal;
         }
 
+        [ValidationAspect(typeof(ProductValidator))]//AOP
         public IResult Add(Product product)
         {
-            if (product.ProductName.Length < 2)
-            {
-                //Magic string
-                return new ErrorResult(Messages.ProductNameInvalid);
-            }
+            //business codes = iş kurallarına uygunluk
+            //validation = doğrulama
+
+
             _productDal.Add(product);
 
             return new Result(true, Messages.ProductAdded);
