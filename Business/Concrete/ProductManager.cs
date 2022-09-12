@@ -18,6 +18,7 @@ using Core.Utilities.Business;
 using DataAccess.Concrete.EntityFramework;
 using FluentValidation;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
+using Business.BusinessAspect.Autofac;
 
 namespace Business.Concrete
 {
@@ -35,6 +36,8 @@ namespace Business.Concrete
             _categoryService = categoryService;
         }
 
+
+        [SecuredOperation("admin")]
         [ValidationAspect(typeof(ProductValidator))]//AOP
         public IResult Add(Product product)
         {
