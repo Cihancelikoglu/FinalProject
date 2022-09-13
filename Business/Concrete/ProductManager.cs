@@ -19,6 +19,8 @@ using DataAccess.Concrete.EntityFramework;
 using FluentValidation;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 using Business.BusinessAspect.Autofac;
+using Core.Aspects.Autofac.Caching;
+using Core.CrossCuttingConcerns.Transaction;
 
 namespace Business.Concrete
 {
@@ -39,10 +41,11 @@ namespace Business.Concrete
 
         [SecuredOperation("product.add,admin")]
         [ValidationAspect(typeof(ProductValidator))]//AOP
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Product product)
         {
             IResult result = BusinessRules.Run(CheckIfProductCountOfCategoryCorrect(product.ProductId),
-                 CheckIfProductNameExists(product.ProductName),CheckIfCategoryLimitExceded());
+                 CheckIfProductNameExists(product.ProductName), CheckIfCategoryLimitExceded());
 
             if (result != null)
             {
@@ -53,6 +56,20 @@ namespace Business.Concrete
             return new Result(true, Messages.ProductAdded);
         }
 
+        [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
+        public IResult Update(Product product)
+        {
+            var result = _productDal.GetAll(x => x.CategoryId == product.CategoryId).Count;
+            if (result >= 0)
+            {
+                return new ErrorResult(Messages.ProductCountOfCategoryError);
+            }
+            _productDal.Update(product);
+            return new Result(true, Messages.ProductUpdated);
+        }
+
+        [CacheAspect] // key,value
         public IDataResult<List<Product>> GetAll()
         {
             if (DateTime.Now.Hour == 02)
@@ -68,6 +85,7 @@ namespace Business.Concrete
             return new SuccessDataResult<List<Product>>(_productDal.GetAll(x => x.CategoryId == categoryId), Messages.ProductListed);
         }
 
+        [CacheAspect]
         public IDataResult<Product> GetById(int productId)
         {
             return new SuccessDataResult<Product>(_productDal.Get(x => x.ProductId == productId), Messages.ProductListed);
@@ -119,6 +137,18 @@ namespace Business.Concrete
             }
 
             return new ErrorResult(Messages.CheckIfCategoryLimitExceded);
+        }
+
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Product product)
+        {
+            Add(product);
+            if (product.UnitPrice < 10)
+            {
+                throw new Exception("");
+            }
+            Add(product);
+            return null;
         }
     }
 }
